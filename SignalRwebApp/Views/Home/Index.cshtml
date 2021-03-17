@@ -1,0 +1,76 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<script src="~/js/signalr.min.js"></script>
+<script src="~/js/jquery.min.js"></script>
+<script language="JavaScript" type="text/javascript">
+    $(document).ready(() => {
+        //withAutomaticReconnect's default time periods ...
+        //4 steps for connection again : 0sn - 2sn - 10sn - 30sn
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:5001/signalrHub")
+            .withAutomaticReconnect([1000, 2000, 3000, 4000])
+            .build();
+
+        //message div css content
+        function messageCss(color, txt) {
+            controldiv.css("background-color", color);
+            controldiv.html(txt);
+            controldiv.fadeIn(2000, () => {
+                setTimeout(() => {
+                    controldiv.fadeOut(2000);
+                }, 500);
+            });
+        }
+
+        //Standard connection "start" method
+        //connection.start();
+
+        //Asyncron method for connection control
+        async function connectWithSignalR() {
+            try { await connection.start(); }
+            catch (err) {
+                setTimeout(() => {
+                    messageCss("red", "Connection Error. Connecting Again...");
+                    connectWithSignalR();
+                }, 2000);
+            }
+        }
+        connectWithSignalR();
+
+        const controldiv = $("#controldiv");
+        //Connecting Again
+        connection.onreconnecting(error => {
+            messageCss("blue", "Connecting...");
+        });
+
+        //After Connection
+        connection.onreconnected(connectionid => {
+            messageCss("green", "The Connection Has Been Made...");
+        });
+
+        //Message after last control
+        connection.onclose(connectionid => {
+            messageCss("red", "The Connection Has Not Been Made...");
+        });
+
+        $("#btnSubmitMessage").click(() => {
+            var newmsg = $("#txtMessage").val();
+            connection.invoke("sendMessageToAllClients", newmsg).catch(error => console.log(`Message Error : ${error}`));
+        });
+
+        //Hub Listening 
+        connection.on("clientmessages", message => {
+            $("#divMessages").append(message + "<br/>");
+        });
+    });
+</script>
+<div class="text-center">
+    <h3>SignalR - Message Board</h3>
+    <br>
+    <div style="padding: 5px; font-weight: bold;" id="controldiv"></div>
+    <br>
+    <input type="text" id="txtMessage" />
+    <button id="btnSubmitMessage">SendMessage</button>
+    <div id="divMessages" style="font-size:18pt"></div>
+</div>
