@@ -6,7 +6,7 @@
 <script language="JavaScript" type="text/javascript">
     $(document).ready(() => {
         //withAutomaticReconnect's default time periods ...
-        //4 steps for connection again : 0sn - 2sn - 10sn - 30sn
+        //4 steps for connection again (milliseconds) : 0 - 2000 - 10000 - 30000
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("https://localhost:5001/signalrHub")
             .withAutomaticReconnect([1000, 2000, 3000, 4000])
